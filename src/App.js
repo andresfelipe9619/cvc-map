@@ -4,6 +4,7 @@ import { Map } from '@esri/react-arcgis'
 import Layers from './Layers'
 import './App.css'
 import Widgets from './Widgets'
+import MapEdition from './MapEdition'
 
 const API_KEY =
   'AAPK37053845cd0740ea874876df578a5dc93vU9-4pGR2Np-ye64TcHb8uvjZQLO8FrxaK_ucTaJc1x2cSQ0-hxjmXaGECKGhS7'
@@ -35,7 +36,7 @@ function App () {
   }
   console.log('state', state)
   return (
-    <div style={{ width: '100vw', height: '100vh' }}>
+    <div style={{ width: '99vw', height: '80vh' }}>
       <Map
         mapProperties={mapProperties}
         viewProperties={viewProperties}
@@ -43,6 +44,7 @@ function App () {
       />
       <Widgets {...state} />
       <Layers {...state} />
+      <MapEdition {...state} />
     </div>
   )
 }
