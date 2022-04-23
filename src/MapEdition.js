@@ -380,37 +380,72 @@ function MapEdition ({ map, view }) {
       <hr />
       <br /> <b>Haga doble click sobre el mapa para obtener las coordenadas:</b>
       <br /> Latitud:{' '}
-      <input type='text' id='input_latitud' value='3.3748621110488584' />
+      <input
+        onChange={handleChange}
+        type='text'
+        name='input_latitud'
+        value='3.3748621110488584'
+      />
       <br /> Longitud:{' '}
-      <input type='text' id='input_longitud' value='-76.53335809707642' />
-      <br /> ID Generador: <input type='text' id='input_idgestor' />
-      <button id='addNewGestor'>Agregar Nuevo Gestor en coordenadas</button>
+      <input
+        onChange={handleChange}
+        type='text'
+        name='input_longitud'
+        value='-76.53335809707642'
+      />
+      <br /> ID Generador:{' '}
+      <input onChange={handleChange} type='text' name='input_idgestor' />
+      <button id='addNewGestor' onClick={handleCreate}>
+        Agregar Nuevo Gestor en coordenadas
+      </button>
       <hr />
       <br /> <b>Haga doble click sobre Gestor que desea borrar:</b>
-      <input type='text' id='input_objectid' value='ingresar objectid' />
-      <button id='deleteGestor'>Borrar Gestor</button>
+      <input
+        onChange={handleChange}
+        type='text'
+        name='input_objectid'
+        placeholder='ingresar objectid'
+      />
+      <button id='deleteGestor' onClick={handleDelete}>
+        Borrar Gestor
+      </button>
       <hr />
       <br />
       Probar con estos querys (Layer: <b>Proyectos</b>): <br /> ESTADO='1'{' '}
       <br /> ESTADO='0' <br /> ID_PROYECTO='88888'
       <br />
       <br />
-      <input type='text' id='where_query' value="ESTADO='1'" />
-      <button id='queryProyectos'>Realizar Query</button>
+      <input
+        onChange={handleChange}
+        type='text'
+        name='where_query'
+        value="ESTADO='1'"
+      />
+      <button id='queryProyectos' onClick={handleQuery}>
+        Realizar Query
+      </button>
       <br />
       <br />
       <br />
-      <hr /> ObjectID del Gestor: <input type='text' id='input_objectid_edit' />
+      <hr /> ObjectID del Gestor:{' '}
+      <input onChange={handleChange} type='text' name='input_objectid_edit' />
       <br />
       <br /> <b>Haga doble click sobre el mapa para obtener las coordenadas:</b>
-      <br /> ID Gestor: <input type='text' id='input_gestorid_edit' />
+      <br /> ID Gestor:{' '}
+      <input onChange={handleChange} type='text' name='input_gestorid_edit' />
       <br />
       <br /> Latitud:{' '}
-      <input type='text' id='input_latitud_update' value='3.3748621110488584' />
+      <input
+        onChange={handleChange}
+        type='text'
+        name='input_latitud_update'
+        value='3.3748621110488584'
+      />
       <br /> Longitud:{' '}
       <input
+        onChange={handleChange}
         type='text'
-        id='input_longitud_update'
+        name='input_longitud_update'
         value='-76.53335809707642'
       />
       <br />
@@ -422,17 +457,20 @@ function MapEdition ({ map, view }) {
       </select>
       <br />
       ESTADO:
-      <select name='select_estado' id='select_estado'>
+      <select id='select_estado' name='select_estado' onChange={handleChange}>
         <option value='0'>Inactivo</option>
         <option value='1'>Activo</option>
       </select>
       <br /> Observaciones:{' '}
       <input
+        onChange={handleChange}
         type='text'
-        id='input_obs_gestor'
-        value='Observacion para un gestor'
+        name='input_obs_gestor'
+        placeholder='Observacion para un gestor'
       />
-      <button id='editGestor'>Editar Gestor</button>
+      <button id='editGestor' onClick={handleEdit}>
+        Editar Gestor
+      </button>
     </div>
   )
 }
