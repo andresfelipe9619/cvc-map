@@ -4,19 +4,22 @@ import { layersURL } from './globals'
 
 function MapEdition ({ map, view, layerGestores }) {
   const [resultsLayer, setResultsLayer] = useState(null)
+  const [modules, setModules] = useState([])
   const [inputs, setInputs] = useState({
-    input_latitud: '',
-    input_longitud: '',
+    input_latitud: '3.3748621110488584',
+    input_longitud: '-76.53335809707642',
     input_idgestor: '',
     input_objectid: '',
-    where_query: '',
+    where_query: `ESTADO='1'`,
     input_obs_gestor: '',
     input_objectid_edit: '',
     input_gestorid_edit: '',
-    input_latitud_update: '',
-    input_longitud_update: '',
+    input_latitud_update: '3.3748621110488584',
+    input_longitud_update: '-76.53335809707642',
     select_tipogestor: '',
-    select_estado: ''
+    select_estado: '',
+    lat_coordinate: '',
+    lon_coordinate: ''
   })
 
   const {
@@ -153,7 +156,7 @@ function MapEdition ({ map, view, layerGestores }) {
   //query en capa de  proyectos
   function handleQuery () {
     console.log('query proyectos')
-
+    const [QueryTask, Query] = modules
     let queryTask = new QueryTask({
       url: layersURL.proyectos
     })
@@ -161,8 +164,6 @@ function MapEdition ({ map, view, layerGestores }) {
     let query = new Query()
     query.returnGeometry = true
     query.outFields = ['*']
-
-    let where_query = document.getElementById('where_query').value
 
     query.where = where_query
 
@@ -205,8 +206,11 @@ function MapEdition ({ map, view, layerGestores }) {
     let latCoordinate = view.center.latitude
     let lonCoordinate = view.center.longitude
 
-    document.getElementById('lat_coordinate').value = latCoordinate
-    document.getElementById('lon_coordinate').value = lonCoordinate
+    setInputs(prev => ({
+      ...prev,
+      lat_coordinate: latCoordinate,
+      lon_coordinate: lonCoordinate
+    }))
 
     let strCoords = `Lat: ${latCoordinate} ,  Lon: ${lonCoordinate} `
     console.log(strCoords)
@@ -223,141 +227,139 @@ function MapEdition ({ map, view, layerGestores }) {
     }
 
     console.log(mapPointtest)
-    //TODO:  Project coordinates from 4326 to 3115
+  }
 
-    projection.load().then(function () {
-      let outSpatialReference = new SpatialReference({
-        wkid: 3115
-      })
-      let projectedPoints = projection.project(
-        mapPointtest,
-        outSpatialReference
-      )
-      console.log(projectedPoints)
-    })
+  //widget html para mostrar las coordenadas
+  function createCoordsWidget () {
+    let coordsWidget = document.createElement('div')
+    coordsWidget.id = 'coordsWidget'
+    coordsWidget.className = 'esri-widget esri-component'
+    coordsWidget.style.padding = '7px 15px 5px'
+    return coordsWidget
+  }
+
+  function createPoint () {
+    // TODO: Se podria usar la coordena actual obtenida desde el GPS del dispositivo
+    const point = {
+      //Create a point at univalle
+      type: 'point',
+      longitude: -76.5355613,
+      latitude: 3.3758083
+    }
+    const simpleMarkerSymbol = {
+      type: 'simple-marker',
+      style: 'cross',
+      color: [255, 0, 0], // Red
+      size: '20px', // pixels
+      outline: {
+        color: [255, 0, 0], // White
+        width: 2
+      }
+    }
+    return { point, simpleMarkerSymbol }
   }
 
   useEffect(() => {
+    if (!view || !map) return
     loadModules([
       'esri/Graphic',
       'esri/layers/GraphicsLayer',
       'esri/tasks/QueryTask',
-      'esri/tasks/support/Query',
-      'esri/geometry/SpatialReference',
-      'esri/geometry/projection'
+      'esri/tasks/support/Query'
     ])
-      .then(
-        ([
-          Graphic,
-          GraphicsLayer,
-          QueryTask,
-          Query,
-          SpatialReference,
-          projection
-        ]) => {
-          // Obtener el Object id del Gestor seleccionado
-          view.on('click', function (event) {
-            view.hitTest(event).then(function (response) {
-              const [selected] = response.results
-              const { layer, attributes } = selected.graphic || {}
-              if (layer.id === 'gestoresLayer') {
-                console.log('OBJECTID Gestor Seleccionado:')
-                console.log(attributes)
+      .then(esriModules => {
+        const [Graphic, GraphicsLayer, QueryTask, Query] = esriModules
+        setModules([QueryTask, Query])
+        const results_layer = new GraphicsLayer({
+          title: 'Capa resultado consulta'
+        })
+        setResultsLayer(results_layer)
 
-                //para asignar objectid a la caja de texto y despues editarlo
-                setInputs(prev => ({
-                  ...prev,
-                  input_objectid_edit: attributes.OBJECTID,
-                  input_gestorid_edit: attributes.ID_GESTOR,
-                  input_objectid: attributes.OBJECTID
-                }))
-              }
-            })
+        const coordsWidget = createCoordsWidget()
+        view.ui.add(coordsWidget, 'bottom-right')
+
+        const graphicsLayer = new GraphicsLayer()
+        //map.add(graphicsLayer);
+
+        const { point, simpleMarkerSymbol } = createPoint()
+        const pointGraphic = new Graphic({
+          geometry: point,
+          symbol: simpleMarkerSymbol
+        })
+        graphicsLayer.add(pointGraphic)
+
+        //Centrar el mapa a la posición de la coordenada
+        view.center = point
+        view.zoom = 16
+
+        // Obtener el Object id del Gestor seleccionado
+        view.on('click', function (event) {
+          view.hitTest(event).then(function (response) {
+            const [selected] = response?.results || []
+            const { layer, attributes } = selected?.graphic || {}
+            if (layer?.id === 'gestoresLayer') {
+              console.log('OBJECTID Gestor Seleccionado:')
+              console.log(attributes)
+
+              //para asignar objectid a la caja de texto y despues editarlo
+              setInputs(prev => ({
+                ...prev,
+                input_objectid_edit: attributes?.OBJECTID,
+                input_gestorid_edit: attributes?.ID_GESTOR,
+                input_objectid: attributes?.OBJECTID
+              }))
+            }
           })
+        })
 
-          let results_layer = new GraphicsLayer({
-            title: 'Capa resultado consulta'
-          })
-          setResultsLayer(results_layer)
+        //Capturo las coordenadas del mouse y las asigno a la caja de texto latitud y longitud
+        view.on('double-click', function (event) {
+          const { x, y, mapPoint } = event
+          console.log('screen point', x, y)
+          console.log('map point', mapPoint)
 
-          //Capturo las coordenadas del mouse y las asigno a la caja de texto latitud y longitud
-          view.on('double-click', function (event) {
-            const { x, y, mapPoint } = event
-            console.log('screen point', x, y)
-            console.log('map point', mapPoint)
+          setInputs(prev => ({
+            ...prev,
+            input_latitud: mapPoint?.latitude,
+            input_longitud: mapPoint?.longitude,
+            input_latitud_update: mapPoint?.latitude,
+            input_longitud_update: mapPoint?.longitude
+          }))
 
-            setInputs(prev => ({
-              ...prev,
-              input_latitud: mapPoint.latitude,
-              input_longitud: mapPoint.longitude,
-              input_latitud_update: mapPoint.latitude,
-              input_longitud_update: mapPoint.longitude
-            }))
+          alert('Agregue las coordenadas de donde se dio doble click')
+        })
 
-            alert('Agregue las coordenadas de donde se dio doble click')
-          })
+        //listener de evento sobre el mapa, actualizar la posición del marcador de posicion
+        view.on(['mouse-wheel', 'drag'], function () {
+          let latCoordinate = view.center.latitude
+          let lonCoordinate = view.center.longitude
 
-          //widget html para mostrar las coordenadas
-          let coordsWidget = document.createElement('div')
-          coordsWidget.id = 'coordsWidget'
-          coordsWidget.className = 'esri-widget esri-component'
-          coordsWidget.style.padding = '7px 15px 5px'
-          view.ui.add(coordsWidget, 'bottom-right')
+          setInputs(prev => ({
+            ...prev,
+            lat_coordinate: latCoordinate,
+            lon_coordinate: lonCoordinate
+          }))
 
-          let graphicsLayer = new GraphicsLayer()
-          //map.add(graphicsLayer);
-          // TODO: Se podria usar la coordena actual obtenida desde el GPS del dispositivo
-          const point = {
-            //Create a point at univalle
+          coordsWidget.innerHTML = `Centro Mapa -> Lat: ${latCoordinate} ,  Lon: ${lonCoordinate} `
+
+          //Create a point
+          let mapPoint = {
             type: 'point',
-            longitude: -76.5355613,
-            latitude: 3.3758083
-          }
-          const simpleMarkerSymbol = {
-            type: 'simple-marker',
-            style: 'cross',
-            color: [255, 0, 0], // Red
-            size: '20px', // pixels
-            outline: {
-              color: [255, 0, 0], // White
-              width: 2
-            }
+            longitude: lonCoordinate,
+            latitude: latCoordinate
           }
 
-          const pointGraphic = new Graphic({
-            geometry: point,
-            symbol: simpleMarkerSymbol
-          })
-          graphicsLayer.add(pointGraphic)
-
-          //Centrar el mapa a la posición de la coordenada
-          view.center = point
-          view.zoom = 16
-
-          //listener de evento sobre el mapa, actualizar la posición del marcador de posicion
-          view.on(['mouse-wheel', 'drag'], function () {
-            let latCoordinate = view.center.latitude
-            let lonCoordinate = view.center.longitude
-            document.getElementById('lat_coordinate').value = latCoordinate
-            document.getElementById('lon_coordinate').value = lonCoordinate
-
-            coordsWidget.innerHTML = `Centro Mapa -> Lat: ${latCoordinate} ,  Lon: ${lonCoordinate} `
-
-            let mapPoint = {
-              //Create a point
-              type: 'point',
-              longitude: lonCoordinate,
-              latitude: latCoordinate
-            }
-
-            let graphic = pointGraphic.clone()
-            graphic.geometry = mapPoint
-            view.graphics.removeAll()
-            view.graphics.add(graphic)
-          })
-        }
-      )
+          let graphic = pointGraphic.clone()
+          graphic.geometry = mapPoint
+          view.graphics.removeAll()
+          view.graphics.add(graphic)
+        })
+      })
       .catch(err => console.error(err))
+
+    return function cleanup () {
+      resultsLayer && setResultsLayer(null)
+    }
     //eslint-disable-next-line
   }, [view, map])
 
