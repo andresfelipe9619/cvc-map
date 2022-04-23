@@ -2,25 +2,29 @@ import React, { memo, useEffect, useState } from 'react'
 import { loadModules } from 'esri-loader'
 import { layersURL } from './globals'
 
+const Univalle = { lat: 3.3748621110488584, lon: -76.53335809707642 }
+
+const DefaultState = {
+  input_latitud: Univalle.lat,
+  input_longitud: Univalle.lon,
+  input_idgestor: '',
+  input_objectid: '',
+  where_query: `ESTADO='1'`,
+  input_obs_gestor: '',
+  input_objectid_edit: '',
+  input_gestorid_edit: '',
+  input_latitud_update: Univalle.lat,
+  input_longitud_update: Univalle.lon,
+  select_tipogestor: '',
+  select_estado: '',
+  lat_coordinate: '',
+  lon_coordinate: ''
+}
+
 function MapEdition ({ map, view, layerGestores }) {
   const [resultsLayer, setResultsLayer] = useState(null)
   const [modules, setModules] = useState([])
-  const [inputs, setInputs] = useState({
-    input_latitud: '3.3748621110488584',
-    input_longitud: '-76.53335809707642',
-    input_idgestor: '',
-    input_objectid: '',
-    where_query: `ESTADO='1'`,
-    input_obs_gestor: '',
-    input_objectid_edit: '',
-    input_gestorid_edit: '',
-    input_latitud_update: '3.3748621110488584',
-    input_longitud_update: '-76.53335809707642',
-    select_tipogestor: '',
-    select_estado: '',
-    lat_coordinate: '',
-    lon_coordinate: ''
-  })
+  const [inputs, setInputs] = useState(DefaultState)
 
   const {
     input_latitud,
@@ -34,7 +38,9 @@ function MapEdition ({ map, view, layerGestores }) {
     input_latitud_update,
     input_longitud_update,
     select_tipogestor,
-    select_estado
+    select_estado,
+    lat_coordinate,
+    lon_coordinate
   } = inputs
 
   const geometry = {
@@ -153,7 +159,7 @@ function MapEdition ({ map, view, layerGestores }) {
     }
   }
 
-  //query en capa de  proyectos
+  // Query en capa de  proyectos
   function handleQuery () {
     console.log('query proyectos')
     const [QueryTask, Query] = modules
@@ -276,7 +282,7 @@ function MapEdition ({ map, view, layerGestores }) {
         setResultsLayer(results_layer)
 
         const coordsWidget = createCoordsWidget()
-        view.ui.add(coordsWidget, 'bottom-right')
+        view.ui.add(coordsWidget, 'bottom-left')
 
         const graphicsLayer = new GraphicsLayer()
         //map.add(graphicsLayer);
@@ -288,7 +294,7 @@ function MapEdition ({ map, view, layerGestores }) {
         })
         graphicsLayer.add(pointGraphic)
 
-        //Centrar el mapa a la posición de la coordenada
+        // Centrar el mapa a la posición de la coordenada
         view.center = point
         view.zoom = 16
 
@@ -312,7 +318,7 @@ function MapEdition ({ map, view, layerGestores }) {
           })
         })
 
-        //Capturo las coordenadas del mouse y las asigno a la caja de texto latitud y longitud
+        // Capturo las coordenadas del mouse y las asigno a la caja de texto latitud y longitud
         view.on('double-click', function (event) {
           const { x, y, mapPoint } = event
           console.log('screen point', x, y)
@@ -329,7 +335,7 @@ function MapEdition ({ map, view, layerGestores }) {
           alert('Agregue las coordenadas de donde se dio doble click')
         })
 
-        //listener de evento sobre el mapa, actualizar la posición del marcador de posicion
+        // Listener de evento sobre el mapa, actualizar la posición del marcador de posicion
         view.on(['mouse-wheel', 'drag'], function () {
           let latCoordinate = view.center.latitude
           let lonCoordinate = view.center.longitude
@@ -358,7 +364,8 @@ function MapEdition ({ map, view, layerGestores }) {
       .catch(err => console.error(err))
 
     return function cleanup () {
-      resultsLayer && setResultsLayer(null)
+      setResultsLayer(null)
+      setModules([])
     }
     //eslint-disable-next-line
   }, [view, map])
@@ -370,8 +377,20 @@ function MapEdition ({ map, view, layerGestores }) {
         Obtener Coordenadas centro del mapa
       </button>
       <br />
-      <br /> Latitud: <input type='text' name='lat_coordinate' />
-      <br /> Longitud: <input type='text' name='lon_coordinate' />
+      <br /> Latitud:{' '}
+      <input
+        type='text'
+        name='lat_coordinate'
+        value={lat_coordinate}
+        onChange={handleChange}
+      />
+      <br /> Longitud:{' '}
+      <input
+        type='text'
+        name='lon_coordinate'
+        value={lon_coordinate}
+        onChange={handleChange}
+      />
       <hr />
       <br /> <b>Haga doble click sobre el mapa para obtener las coordenadas:</b>
       <br /> Latitud:{' '}
