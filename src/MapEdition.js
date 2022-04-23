@@ -1,8 +1,242 @@
-import React, { memo, useEffect } from 'react'
+import React, { memo, useEffect, useState } from 'react'
 import { loadModules } from 'esri-loader'
 import { layersURL } from './globals'
 
-function MapEdition ({ map, view }) {
+function MapEdition ({ map, view, layerGestores }) {
+  const [resultsLayer, setResultsLayer] = useState(null)
+  const [inputs, setInputs] = useState({
+    input_latitud: '',
+    input_longitud: '',
+    input_idgestor: '',
+    input_objectid: '',
+    where_query: '',
+    input_obs_gestor: '',
+    input_objectid_edit: '',
+    input_gestorid_edit: '',
+    input_latitud_update: '',
+    input_longitud_update: '',
+    select_tipogestor: '',
+    select_estado: ''
+  })
+
+  const {
+    input_latitud,
+    input_longitud,
+    input_idgestor,
+    input_objectid,
+    where_query,
+    input_obs_gestor,
+    input_objectid_edit,
+    input_gestorid_edit,
+    input_latitud_update,
+    input_longitud_update,
+    select_tipogestor,
+    select_estado
+  } = inputs
+
+  const geometry = {
+    x: input_longitud,
+    y: input_latitud,
+    type: 'point',
+    spatialReference: {
+      wkid: 4326
+    }
+  }
+
+  function handleChange (event) {
+    const { name, value } = event.target
+    setInputs(prev => ({
+      ...prev,
+      [name]: value
+    }))
+  }
+
+  //Funcion para editar un gestor seleccionado
+  function handleEdit () {
+    console.log('Se hizo click en el Boton de editar arbol')
+
+    //muevo el gestor de posicion y actualizo
+    const attributes = {
+      ObjectID: input_objectid_edit,
+      LAT: input_latitud_update,
+      LON: input_longitud_update,
+      ID_GESTOR: input_gestorid_edit,
+      TIPOGESTOR: select_tipogestor,
+      ESTADO: select_estado,
+      OBSERVACIONES: input_obs_gestor,
+      FECHA_REG: Date.now()
+    }
+
+    layerGestores
+      .applyEdits({
+        updateFeatures: [
+          {
+            geometry,
+            attributes
+          }
+        ]
+      })
+      .then(function (response) {
+        console.log(response)
+        alert(
+          'Actualizando el Gestor con ObjectID: ' +
+            response.updateFeatureResults[0].objectId
+        )
+      })
+  }
+
+  //Funcion para agregar un nuevo Gestor
+  function handleCreate () {
+    console.log('Se hizo click en el Boton de agregar nuevo gestor')
+
+    const attributes = {
+      LAT: input_latitud,
+      LON: input_longitud,
+      ID_GESTOR: input_idgestor,
+      ESTADO: 1,
+      TIPOGESTOR: 1,
+      FECHA_REG: Date.now()
+    }
+
+    layerGestores
+      .applyEdits({
+        addFeatures: [
+          {
+            geometry,
+            attributes
+          }
+        ]
+      })
+      .then(function (response) {
+        console.log(response)
+        alert('Creado el ObjectID: ' + response.addFeatureResults[0].objectId)
+      })
+  }
+
+  //Funcion para borrar un  gestor seleccionado
+  function handleDelete () {
+    console.log(
+      'Se hizo click en el Boton de borrar el arbol con OBJECTID: ' +
+        input_objectid
+    )
+
+    if (input_objectid > 0) {
+      let confirmw = window.confirm(
+        'Esta seguro que desea borrar el gestor con ObjectID: ' + input_objectid
+      )
+      if (confirmw) {
+        // Eliminar el arbol con el objectid seleccionado
+        layerGestores
+          .applyEdits({
+            deleteFeatures: [
+              {
+                objectId: input_objectid
+              }
+            ]
+          })
+          .then(function (response) {
+            console.log(response)
+            alert(
+              'Fue Eliminado el ObjectID: ' +
+                response.deleteFeatureResults[0].objectId +
+                ' con Exito !'
+            )
+          })
+      } else {
+        alert('Todo bien, no se borro nada')
+      }
+    } else {
+      alert('Seleccione un valor numerico valido !')
+    }
+  }
+
+  //query en capa de  proyectos
+  function handleQuery () {
+    console.log('query proyectos')
+
+    let queryTask = new QueryTask({
+      url: layersURL.proyectos
+    })
+
+    let query = new Query()
+    query.returnGeometry = true
+    query.outFields = ['*']
+
+    let where_query = document.getElementById('where_query').value
+
+    query.where = where_query
+
+    let marker = {
+      type: 'simple-marker',
+      outline: {
+        color: [248, 35, 35, 1],
+        width: 2
+      },
+      angle: 360,
+      color: [12, 35, 35, 0.1],
+      size: 30
+    }
+
+    map.remove(resultsLayer)
+    resultsLayer.removeAll()
+
+    // When resolved, returns features and graphics that satisfy the query.
+    queryTask.execute(query).then(function (results) {
+      resultsLayer.addMany(results.features)
+
+      for (let i = 0; i < results.features.length; i++) {
+        results.features[i].symbol = marker
+      }
+
+      map.add(resultsLayer)
+    })
+
+    // When resolved, returns a count of the features that satisfy the query.
+    queryTask.executeForCount(query).then(function (results) {
+      console.log(results)
+      if (!results) {
+        alert('La consulta no retorno nada !')
+      }
+    })
+  }
+
+  function handleShowCoordinates () {
+    console.log('Show center map coordinates')
+    let latCoordinate = view.center.latitude
+    let lonCoordinate = view.center.longitude
+
+    document.getElementById('lat_coordinate').value = latCoordinate
+    document.getElementById('lon_coordinate').value = lonCoordinate
+
+    let strCoords = `Lat: ${latCoordinate} ,  Lon: ${lonCoordinate} `
+    console.log(strCoords)
+    alert(strCoords)
+
+    let mapPointtest = {
+      //Create a point
+      type: 'point',
+      longitude: lonCoordinate,
+      latitude: latCoordinate,
+      spatialReference: {
+        wkid: 4326
+      }
+    }
+
+    console.log(mapPointtest)
+    //TODO:  Project coordinates from 4326 to 3115
+
+    projection.load().then(function () {
+      let outSpatialReference = new SpatialReference({
+        wkid: 3115
+      })
+      let projectedPoints = projection.project(
+        mapPointtest,
+        outSpatialReference
+      )
+      console.log(projectedPoints)
+    })
+  }
+
   useEffect(() => {
     loadModules([
       'esri/Graphic',
@@ -21,253 +255,44 @@ function MapEdition ({ map, view }) {
           SpatialReference,
           projection
         ]) => {
-          //Funcion para editar un gestor seleccionado
-          document
-            .getElementById('editGestor')
-            .addEventListener('click', function (event) {
-              console.log('Se hizo click en el Boton de editar arbol')
-
-              let objectid_value = document.getElementById(
-                'input_objectid_edit'
-              ).value
-
-              let latitud_value = document.getElementById(
-                'input_latitud_update'
-              ).value
-              let longitud_value = document.getElementById(
-                'input_longitud_update'
-              ).value
-
-              let idgestor_value = document.getElementById(
-                'input_gestorid_edit'
-              ).value
-
-              let tipogestor_value = document.getElementById(
-                'select_tipogestor'
-              ).value
-              let estado_value = document.getElementById('select_estado').value
-              let obs_value = document.getElementById('input_obs_gestor').value
-
-              //muevo el gestor de posicion y actualizo
-              let attributes = {
-                ObjectID: objectid_value,
-                LAT: latitud_value,
-                LON: longitud_value,
-                ID_GESTOR: idgestor_value,
-                TIPOGESTOR: tipogestor_value,
-                ESTADO: estado_value,
-                OBSERVACIONES: obs_value,
-                FECHA_REG: Date.now()
-              }
-
-              //   layerGestores
-              //     .applyEdits({
-              //       updateFeatures: [
-              //         {
-              //           geometry: {
-              //             x: longitud_value,
-              //             y: latitud_value,
-              //             type: 'point',
-              //             spatialReference: {
-              //               wkid: 4326
-              //             }
-              //           },
-              //           attributes
-              //         }
-              //       ]
-              //     })
-              //     .then(function (response) {
-              //       console.log(response)
-              //       alert(
-              //         'Actualizando el Gestor con ObjectID: ' +
-              //           response.updateFeatureResults[0].objectId
-              //       )
-              //     })
-            })
-
-          //Funcion para agregar un nuevo Gestor
-          document
-            .getElementById('addNewGestor')
-            .addEventListener('click', function (event) {
-              console.log('Se hizo click en el Boton de agregar nuevo gestor')
-
-              let latitud_value = document.getElementById('input_latitud').value
-              let longitud_value = document.getElementById('input_longitud')
-                .value
-              let idgestor = document.getElementById('input_idgestor').value
-
-              let attributes = {
-                LAT: latitud_value,
-                LON: longitud_value,
-                ID_GESTOR: idgestor,
-                ESTADO: 1,
-                TIPOGESTOR: 1,
-                FECHA_REG: Date.now()
-              }
-
-              //   layerGestores
-              //     .applyEdits({
-              //       addFeatures: [
-              //         {
-              //           geometry: {
-              //             x: longitud_value,
-              //             y: latitud_value,
-              //             type: 'point',
-              //             spatialReference: {
-              //               wkid: 4326
-              //             }
-              //           },
-              //           attributes: attributes
-              //         }
-              //       ]
-              //     })
-              //     .then(function (response) {
-              //       console.log(response)
-              //       alert(
-              //         'Creado el ObjectID: ' +
-              //           response.addFeatureResults[0].objectId
-              //       )
-              // })
-            })
-
-          //Obtener el Object id del Gestor seleccionado
+          // Obtener el Object id del Gestor seleccionado
           view.on('click', function (event) {
             view.hitTest(event).then(function (response) {
-              let [selected] = response.results
-              if (
-                selected.graphic &&
-                selected.graphic.layer.id === 'gestoresLayer'
-              ) {
+              const [selected] = response.results
+              const { layer, attributes } = selected.graphic || {}
+              if (layer.id === 'gestoresLayer') {
                 console.log('OBJECTID Gestor Seleccionado:')
-                console.log(selected.graphic.attributes)
+                console.log(attributes)
 
                 //para asignar objectid a la caja de texto y despues editarlo
-                document.getElementById('input_objectid_edit').value =
-                  selected.graphic.attributes.OBJECTID
-
-                document.getElementById('input_gestorid_edit').value =
-                  selected.graphic.attributes.ID_GESTOR
-
-                //para asignar objectid a la caja de texto y despues eliminarlo
-                document.getElementById('input_objectid').value =
-                  selected.graphic.attributes.OBJECTID
+                setInputs(prev => ({
+                  ...prev,
+                  input_objectid_edit: attributes.OBJECTID,
+                  input_gestorid_edit: attributes.ID_GESTOR,
+                  input_objectid: attributes.OBJECTID
+                }))
               }
             })
           })
 
-          //Funcion para borrar un  gestor seleccionado
-          document
-            .getElementById('deleteGestor')
-            .addEventListener('click', function (event) {
-              let objectid_value = document.getElementById('input_objectid')
-                .value
-
-              console.log(
-                'Se hizo click en el Boton de borrar el arbol con OBJECTID: ' +
-                  objectid_value
-              )
-
-              if (objectid_value > 0) {
-                let confirmw = window.confirm(
-                  'Esta seguro que desea borrar el gestor con ObjectID: ' +
-                    objectid_value
-                )
-                if (confirmw) {
-                  //   //Eliminar el arbol con el objectid seleccionado
-                  //   layerGestores
-                  //     .applyEdits({
-                  //       deleteFeatures: [
-                  //         {
-                  //           objectId: objectid_value
-                  //         }
-                  //       ]
-                  //     })
-                  //     .then(function (response) {
-                  //       console.log(response)
-                  //       alert(
-                  //         'Fue Eliminado el ObjectID: ' +
-                  //           response.deleteFeatureResults[0].objectId +
-                  //           ' con Exito !'
-                  //       )
-                  //     })
-                } else {
-                  alert('Todo bien, no se borro nada')
-                }
-              } else {
-                alert('Seleccione un valor numerico valido !')
-              }
-            })
-
-          let resultsLayer = new GraphicsLayer({
+          let results_layer = new GraphicsLayer({
             title: 'Capa resultado consulta'
           })
-
-          //query en capa de  proyectos
-          document
-            .getElementById('queryProyectos')
-            .addEventListener('click', function (event) {
-              console.log('query proyectos')
-
-              let queryTask = new QueryTask({
-                url: layersURL.proyectos
-              })
-
-              let query = new Query()
-              query.returnGeometry = true
-              query.outFields = ['*']
-
-              let where_query = document.getElementById('where_query').value
-
-              query.where = where_query
-
-              let marker = {
-                type: 'simple-marker',
-                outline: {
-                  color: [248, 35, 35, 1],
-                  width: 2
-                },
-                angle: 360,
-                color: [12, 35, 35, 0.1],
-                size: 30
-              }
-
-              map.remove(resultsLayer)
-              resultsLayer.removeAll()
-
-              // When resolved, returns features and graphics that satisfy the query.
-              queryTask.execute(query).then(function (results) {
-                resultsLayer.addMany(results.features)
-
-                for (let i = 0; i < results.features.length; i++) {
-                  results.features[i].symbol = marker
-                }
-
-                map.add(resultsLayer)
-              })
-
-              // When resolved, returns a count of the features that satisfy the query.
-              queryTask.executeForCount(query).then(function (results) {
-                console.log(results)
-                if (!results) {
-                  alert('La consulta no retorno nada !')
-                }
-              })
-            })
+          setResultsLayer(results_layer)
 
           //Capturo las coordenadas del mouse y las asigno a la caja de texto latitud y longitud
           view.on('double-click', function (event) {
-            console.log('screen point', event.x, event.y)
-            console.log('map point', event.mapPoint)
+            const { x, y, mapPoint } = event
+            console.log('screen point', x, y)
+            console.log('map point', mapPoint)
 
-            document.getElementById('input_latitud').value =
-              event.mapPoint.latitude
-            document.getElementById('input_longitud').value =
-              event.mapPoint.longitude
-
-            document.getElementById('input_latitud_update').value =
-              event.mapPoint.latitude
-            document.getElementById('input_longitud_update').value =
-              event.mapPoint.longitude
+            setInputs(prev => ({
+              ...prev,
+              input_latitud: mapPoint.latitude,
+              input_longitud: mapPoint.longitude,
+              input_latitud_update: mapPoint.latitude,
+              input_longitud_update: mapPoint.longitude
+            }))
 
             alert('Agregue las coordenadas de donde se dio doble click')
           })
@@ -330,45 +355,6 @@ function MapEdition ({ map, view }) {
             view.graphics.removeAll()
             view.graphics.add(graphic)
           })
-
-          document
-            .getElementById('showCoordinates')
-            .addEventListener('click', function (event) {
-              console.log('Show center map coordinates')
-              let latCoordinate = view.center.latitude
-              let lonCoordinate = view.center.longitude
-
-              document.getElementById('lat_coordinate').value = latCoordinate
-              document.getElementById('lon_coordinate').value = lonCoordinate
-
-              let strCoords = `Lat: ${latCoordinate} ,  Lon: ${lonCoordinate} `
-              console.log(strCoords)
-              alert(strCoords)
-
-              let mapPointtest = {
-                //Create a point
-                type: 'point',
-                longitude: lonCoordinate,
-                latitude: latCoordinate,
-                spatialReference: {
-                  wkid: 4326
-                }
-              }
-
-              console.log(mapPointtest)
-              //TODO:  Project coordinates from 4326 to 3115
-
-              projection.load().then(function () {
-                let outSpatialReference = new SpatialReference({
-                  wkid: 3115
-                })
-                let projectedPoints = projection.project(
-                  mapPointtest,
-                  outSpatialReference
-                )
-                console.log(projectedPoints)
-              })
-            })
         }
       )
       .catch(err => console.error(err))
