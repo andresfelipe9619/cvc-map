@@ -364,32 +364,45 @@ function MapEdition ({ map, view, layerGestores }) {
   return (
     <div style={{ padding: 8 }}>
       <hr />
+      <button id='showCoordinates' onClick={handleShowCoordinates}>
+        Obtener Coordenadas centro del mapa
+      </button>
+      <br />
+      <br /> Latitud: <input type='text' name='lat_coordinate' />
+      <br /> Longitud: <input type='text' name='lon_coordinate' />
+      <hr />
       <br /> <b>Haga doble click sobre el mapa para obtener las coordenadas:</b>
       <br /> Latitud:{' '}
       <input
-        onChange={handleChange}
         type='text'
+        onChange={handleChange}
+        value={input_latitud}
         name='input_latitud'
-        value='3.3748621110488584'
       />
       <br /> Longitud:{' '}
       <input
-        onChange={handleChange}
         type='text'
+        onChange={handleChange}
         name='input_longitud'
-        value='-76.53335809707642'
+        value={input_longitud}
       />
       <br /> ID Generador:{' '}
-      <input onChange={handleChange} type='text' name='input_idgestor' />
+      <input
+        type='text'
+        name='input_idgestor'
+        onChange={handleChange}
+        value={input_idgestor}
+      />
       <button id='addNewGestor' onClick={handleCreate}>
         Agregar Nuevo Gestor en coordenadas
       </button>
       <hr />
       <br /> <b>Haga doble click sobre Gestor que desea borrar:</b>
       <input
-        onChange={handleChange}
         type='text'
         name='input_objectid'
+        value={input_objectid}
+        onChange={handleChange}
         placeholder='ingresar objectid'
       />
       <button id='deleteGestor' onClick={handleDelete}>
@@ -402,10 +415,10 @@ function MapEdition ({ map, view, layerGestores }) {
       <br />
       <br />
       <input
-        onChange={handleChange}
         type='text'
         name='where_query'
-        value="ESTADO='1'"
+        value={where_query}
+        onChange={handleChange}
       />
       <button id='queryProyectos' onClick={handleQuery}>
         Realizar Query
@@ -425,33 +438,44 @@ function MapEdition ({ map, view, layerGestores }) {
         onChange={handleChange}
         type='text'
         name='input_latitud_update'
-        value='3.3748621110488584'
+        value={input_latitud_update}
       />
       <br /> Longitud:{' '}
       <input
         onChange={handleChange}
         type='text'
         name='input_longitud_update'
-        value='-76.53335809707642'
+        value={input_longitud_update}
       />
       <br />
       Tipo de Gestor:
-      <select name='select_tipogestor' id='select_tipogestor'>
+      <select
+        name='select_tipogestor'
+        id='select_tipogestor'
+        value={select_tipogestor}
+        onChange={handleChange}
+      >
         <option value='1'>Gestor</option>
         <option value='2'>Receptor</option>
         <option value='3'>Gestor-Receptor</option>
       </select>
       <br />
       ESTADO:
-      <select id='select_estado' name='select_estado' onChange={handleChange}>
+      <select
+        id='select_estado'
+        name='select_estado'
+        onChange={handleChange}
+        value={select_estado}
+      >
         <option value='0'>Inactivo</option>
         <option value='1'>Activo</option>
       </select>
       <br /> Observaciones:{' '}
       <input
-        onChange={handleChange}
         type='text'
         name='input_obs_gestor'
+        value={input_obs_gestor}
+        onChange={handleChange}
         placeholder='Observacion para un gestor'
       />
       <button id='editGestor' onClick={handleEdit}>
