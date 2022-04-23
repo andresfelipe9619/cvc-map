@@ -21,6 +21,15 @@ const mapProperties = { basemap: 'arcgis-imagery' }
 
 function App () {
   const [state, setState] = useState(null)
+  const [editor, setEditor] = useState(null)
+  const [municipios, setMunicipios] = useState(null)
+  const [proyectos, setProyectos] = useState(null)
+  const [generadores, setGeneradores] = useState(null)
+  const [gestores, setGestores] = useState(null)
+
+  const handleLoad = (map, view) => {
+    setState({ map, view })
+  }
 
   useEffect(() => {
     loadModules(['esri/config'])
@@ -31,9 +40,20 @@ function App () {
       })
       .catch(err => console.error('esri/config: ' + err))
   }, [])
-  const handleLoad = (map, view) => {
-    setState({ map, view })
+
+  const layersProps = {
+    editor,
+    municipios,
+    proyectos,
+    generadores,
+    gestores,
+    setEditor,
+    setMunicipios,
+    setProyectos,
+    setGeneradores,
+    setGestores
   }
+
   console.log('state', state)
   return (
     <div style={{ width: '99vw', height: '80vh' }}>
@@ -43,8 +63,8 @@ function App () {
         onLoad={handleLoad}
       />
       <Widgets {...state} />
-      <Layers {...state} />
-      <MapEdition {...state} />
+      <Layers {...state} {...layersProps} />
+      <MapEdition {...state} layerGestores={gestores} />
     </div>
   )
 }

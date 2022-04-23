@@ -1,4 +1,4 @@
-import { memo, useEffect, useState } from 'react'
+import { memo, useEffect } from 'react'
 import { loadModules } from 'esri-loader'
 import { layersURL } from './globals'
 
@@ -8,13 +8,20 @@ const popupGeneradores = {
     '<b>ObjectID:</b> {OBJECTID}<br> <b>Longitud:</b> {LON}<br><b>Latitud:</b> {LAT}<br><b>Id Generador:</b> {ID_GENERADOR }<br><b>Estado:</b> {ESTADO}<br><b>Observaciones:</b> {OBSERVACIONES}<br><b>Fecha Registro:</b> {FECHA_REG}<br><b>Tipo Generador:</b> {TIPOGEN}<br><b>Observaciones:</b> {OBSERVACIONES}<br>'
 }
 
-function Layers ({ map, view }) {
-  const [editor, setEditor] = useState(null)
-  const [municipios, setMunicipios] = useState(null)
-  const [proyectos, setProyectos] = useState(null)
-  const [generadores, setGeneradores] = useState(null)
-  const [gestores, setGestores] = useState(null)
-
+function Layers ({
+  map,
+  view,
+  editor,
+  municipios,
+  proyectos,
+  generadores,
+  gestores,
+  setEditor,
+  setMunicipios,
+  setProyectos,
+  setGeneradores,
+  setGestores
+}) {
   useEffect(() => {
     console.log('useEffect layers')
     if (!view || !map) return
